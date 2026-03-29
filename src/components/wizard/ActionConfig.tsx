@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Address } from 'viem';
+import { useAccount } from 'wagmi';
 
 interface ActionConfigProps {
   type: ActionType;
@@ -14,7 +15,10 @@ interface ActionConfigProps {
 
 export function ActionConfig({ type, onCancel, onSave }: ActionConfigProps) {
   const addAction = useBatchStore((state) => state.addAction);
-  const [formData, setFormData] = useState<any>({});
+  const { address } = useAccount();
+  const [formData, setFormData] = useState<any>({
+    recipients: address ? address : '',
+  });
 
   const handleSave = () => {
     const id = Math.random().toString(36).substring(7);
@@ -36,6 +40,12 @@ export function ActionConfig({ type, onCancel, onSave }: ActionConfigProps) {
       };
     } else if (type === 'approve') {
       action = { ...action, ...formData };
+    } else if (type === 'gm') {
+      const recipientsList = (formData.recipients || '')
+        .split('\n')
+        .map((r: string) => r.trim())
+        .filter((r: string) => r.length > 0);
+      action = { ...action, recipients: recipientsList, message: formData.message || '' };
     }
 
     addAction(action);
@@ -49,6 +59,7 @@ export function ActionConfig({ type, onCancel, onSave }: ActionConfigProps) {
       case 'mint': return 'Mint NFT';
       case 'call': return 'Contract Call';
       case 'approve': return 'Approve Allowance';
+      case 'gm': return 'Send GM';
     }
   };
 
@@ -157,6 +168,34 @@ export function ActionConfig({ type, onCancel, onSave }: ActionConfigProps) {
             <div className="space-y-2">
               <Label>Amount</Label>
               <Input placeholder="0.0" type="number" onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
+            </div>
+          </>
+        )}
+        {type === 'gm' && (
+          <>
+            <div className="space-y-2">
+              <Label>Recipients (one address per line)</Label>
+              <textarea 
+                placeholder="0x..." 
+                value={formData.recipients}
+                onChange={(e) => setFormData({ ...formData, recipients: e.target.value })} 
+                className="flex min-h-[100px] w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm ring-offset-slate-950 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+              />
+              <p className="text-xs text-slate-400">Defaults to your connected wallet. Add multiple addresses on new lines for bulk GM.</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Custom Message (Optional)</Label>
+              <Input 
+                placeholder="gm!" 
+                maxLength={32}
+                value={formData.message || ''}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })} 
+              />
+              <p className="text-xs text-slate-400">Max 32 characters. Stored permanently on-chain.</p>
+            </div>
+            <div className="p-3 bg-orange-900/20 border border-orange-900/50 rounded-md">
+              <p className="text-sm text-orange-400 font-medium">Fee per GM: 0.000029 ETH</p>
+              <p className="text-xs text-orange-400/80 mt-1">Total fee will be calculated based on the number of recipients.</p>
             </div>
           </>
         )}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Address, Hex } from 'viem';
 
-export type ActionType = 'send' | 'swap' | 'mint' | 'call' | 'approve';
+export type ActionType = 'send' | 'swap' | 'mint' | 'call' | 'approve' | 'gm';
 
 export interface BaseAction {
   id: string;
@@ -49,7 +49,13 @@ export interface ApproveAction extends BaseAction {
   amount: string;
 }
 
-export type BatchAction = SendAction | SwapAction | MintAction | CallAction | ApproveAction;
+export interface GMAction extends BaseAction {
+  type: 'gm';
+  recipients: string[];
+  message: string;
+}
+
+export type BatchAction = SendAction | SwapAction | MintAction | CallAction | ApproveAction | GMAction;
 
 interface BatchState {
   actions: BatchAction[];

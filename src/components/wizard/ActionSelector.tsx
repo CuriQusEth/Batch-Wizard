@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { ArrowRightLeft, Send, Image as ImageIcon, Code, ShieldCheck } from 'lucide-react';
+import { ArrowRightLeft, Send, Image as ImageIcon, Code, ShieldCheck, Sunrise } from 'lucide-react';
 import { ActionType } from '@/src/store/useBatchStore';
 
 interface ActionSelectorProps {
@@ -47,6 +47,14 @@ const actions = [
     icon: ShieldCheck,
     color: 'text-green-400',
     bg: 'bg-green-900/30',
+  },
+  {
+    type: 'gm' as ActionType,
+    title: 'Send GM',
+    description: 'Record GM on-chain',
+    icon: Sunrise,
+    color: 'text-orange-400',
+    bg: 'bg-orange-900/30',
   },
 ];
 

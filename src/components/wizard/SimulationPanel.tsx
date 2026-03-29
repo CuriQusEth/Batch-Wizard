@@ -4,9 +4,24 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '../ui/button';
 import { Play, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { useAccount, useWriteContract } from 'wagmi';
-import { encodeFunctionData, parseEther, parseUnits, erc20Abi } from 'viem';
+import { encodeFunctionData, parseEther, parseUnits, erc20Abi, toHex, pad } from 'viem';
 
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11';
+// TODO: Replace with your deployed BatchGM contract address on Base Mainnet
+const BATCH_GM_ADDRESS = '0x0000000000000000000000000000000000000000'; 
+
+const BATCH_GM_ABI = [
+  {
+    name: 'sendGM',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'recipient', type: 'address' },
+      { name: 'message', type: 'bytes32' }
+    ],
+    outputs: []
+  }
+] as const;
 
 const MULTICALL3_ABI = [
   {
@@ -67,7 +82,38 @@ export function SimulationPanel() {
 
     try {
       let totalValue = 0n;
-      const calls = actions.map(action => {
+      const calls = actions.flatMap(action => {
+        if (action.type === 'gm') {
+          const gmFee = parseEther('0.000029');
+          
+          return action.recipients.map((recipient: string) => {
+            let messageBytes32: `0x${string}` = pad('0x00', { size: 32 });
+            if (action.message) {
+              // Convert string to hex and pad to 32 bytes
+              const hexMsg = toHex(action.message);
+              messageBytes32 = pad(hexMsg, { size: 32, dir: 'right' });
+            }
+
+            let callData = encodeFunctionData({
+              abi: BATCH_GM_ABI,
+              functionName: 'sendGM',
+              args: [recipient as `0x${string}`, messageBytes32]
+            });
+
+            totalValue += gmFee;
+
+            // Append Builder Code suffix
+            callData = `${callData}07626173656170700080218021802180218021802180218021` as `0x${string}`;
+
+            return {
+              target: BATCH_GM_ADDRESS as `0x${string}`,
+              allowFailure: false,
+              value: gmFee,
+              callData
+            };
+          });
+        }
+
         let target: `0x${string}`;
         let value = 0n;
         let callData: `0x${string}` = '0x';
@@ -114,12 +160,12 @@ export function SimulationPanel() {
           callData = `${callData}07626173656170700080218021802180218021802180218021` as `0x${string}`;
         }
 
-        return {
+        return [{
           target,
           allowFailure: false,
           value,
           callData
-        };
+        }];
       });
 
       const txHash = await writeContractAsync({

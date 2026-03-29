@@ -43,6 +43,7 @@ function SortableItem({ action, onRemove }: { action: BatchAction; onRemove: (id
       case 'mint': return `Mint ${a.quantity || '1'} from ${a.contractAddress || '...'}`;
       case 'call': return `Call ${a.rawCalldata ? 'Raw Calldata' : (a.functionName || '...')} on ${a.contractAddress || '...'}`;
       case 'approve': return `Approve ${a.amount || '0'} for ${a.spender || '...'}`;
+      case 'gm': return `GM to ${a.recipients?.length || 0} recipient(s)`;
       default: return 'Unknown Action';
     }
   };
